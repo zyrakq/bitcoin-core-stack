@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "lnd"
+		},
+		{
+			"path": "lnd-testnet"
+		},
+		{
+			"path": "bitcoind"
+		},
+		{
+			"path": "tor"
+		}
+	],
+	"settings": {}
+}

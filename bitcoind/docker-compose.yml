@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  btc:
+    image: ruimarinho/bitcoin-core:23.0
+    container_name: btc
+    restart: always
+    expose:
+      - "8333"
+      - "8332"
+    ports:
+      - "8333:8333"
+      - "8332:8332"
+    volumes:
+      # - ${HOME}/.bitcoin/bitcoin.conf:/bitcoin/.bitcoin/bitcoin.conf
+      # - ${HOME}/.bitcoin/move.sh:/bitcoin/.bitcoin/move.sh
+      - bitcoin:/home/bitcoin/.bitcoin/
+      - bitcoin:/bitcoin/
+
+volumes:
+  bitcoin: # docker volume create bitcoin
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: /run/media/erritis/Bitcoin/bitcoin

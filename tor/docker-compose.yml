@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  torproxy:
+    image: dperson/torproxy
+    container_name: torproxy
+    restart: unless-stopped
+    networks:
+      - tor-network
+
+  curl:
+    image: curlimages/curl:latest
+    container_name: curl
+    command: sleep infinity
+    networks:
+      - tor-network
+
+networks:
+  tor-network:
+    name: tor-network
+    # driver: bridge
+    driver: ipvlan
+    driver_opts:
+      ipvlan_mode: l2
+      parent: wlo1

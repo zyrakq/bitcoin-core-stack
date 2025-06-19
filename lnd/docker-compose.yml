@@ -1,0 +1,115 @@
+version: "3.9"
+
+services:
+  btc:
+    image: ruimarinho/bitcoin-core:23.0
+    container_name: btc
+    restart: always
+    expose:
+      - "8333"
+      - "8332"
+    ports:
+      - "8333:8333"
+      - "8332:8332"
+    volumes:
+      - ${HOME}/.bitcoin/bitcoin.conf:/bitcoin/.bitcoin/bitcoin.conf
+      - ${HOME}/.bitcoin/move.sh:/bitcoin/.bitcoin/move.sh
+      - bitcoin:/bitcoin/.bitcoin/ # data persistence
+    networks:
+      - btc-network
+
+  torproxy:
+    image: dperson/torproxy
+    container_name: torproxy
+    restart: unless-stopped
+    networks:
+      - lnd-network
+
+  lnd:
+    image: lightninglabs/lnd:v0.14.5-beta
+    container_name: lnd
+    restart: always
+    ports:
+      - "10009:10009"
+      - "9009:9735"
+      - "9735:9735"
+    volumes:
+      - ./lnd/lnd.conf:/lnd/.lnd/lnd.conf
+      - bitcoin:/lnd/.bitcoin/
+      - lnd:/lnd/.lnd/ # data persistence
+    command:
+      --debuglevel=warn
+      --maxpendingchannels=10
+      --rpclisten=0.0.0.0:10009
+      --color=#4126a7
+      --alias=LND
+      --bitcoin.active
+      --bitcoin.mainnet
+      --bitcoin.node=bitcoind
+      --bitcoind.rpchost=btc
+      --bitcoind.rpcuser=erritis
+      --bitcoind.rpcpassword=b@x%s3j~zPKVfgiHd5^Secq^#xqDpUew
+      --bitcoind.zmqpubrawblock=tcp://btc:8332
+      --bitcoind.zmqpubrawtx=tcp://btc:8333
+      --adminmacaroonpath=/lnd/.lnd/admin.macaroon
+      --readonlymacaroonpath=/lnd/.lnd/readonly.macaroon
+      --invoicemacaroonpath=/lnd/.lnd/invoice.macaroon
+      --tor.active
+      --tor.socks=torproxy:9050
+      --tor.streamisolation=false
+      --tor.v3
+      --tor.control=torproxy:9051
+      --listen=localhost
+      --listen=torproxy
+      # --externalip=88.135.143.213
+      # --tlsextraip=88.135.143.213
+      # --tor.skip-proxy-for-clearnet-targets=1
+    networks:
+      - btc-network
+      - lnd-network
+
+  litd:
+    image: lightninglabs/litd
+    container_name: litd
+    restart: always
+    ports:
+      - "8443:8443"
+      - "11010:11010" # loopd
+      - "12010:12010" # poold
+      - "8465:8465" # faraday
+    volumes:
+      - ./lit/lit.conf:/lit/.lit/lit.conf
+      - lnd:/lnd/.lnd/
+      - lit:/lit/.lit/
+    command:
+      --httpslisten=0.0.0.0:8443
+      --uipassword=b@7mC^vho9s3aNKjSFM#brcZw`UWNE#u
+      --lit-dir=/lit/.lit
+      --network=mainnet
+      --remote.lit-debuglevel=warn
+      --remote.lnd.rpcserver=lnd:10009
+      --remote.lnd.macaroonpath=/lnd/.lnd/admin.macaroon
+      --remote.lnd.tlscertpath=/lnd/.lnd/tls.cert
+      --loop.loopoutmaxparts=5
+      --pool.newnodesonly=true
+      --faraday.min_monitored=48h
+      --faraday.connect_bitcoin
+      --faraday.bitcoin.host=btc:8332
+      --faraday.bitcoin.user=erritis
+      --faraday.bitcoin.password=b@x%s3j~zPKVfgiHd5^Secq^#xqDpUew
+    networks:
+      - btc-network
+
+networks:
+  btc-network:
+    name: btc-network
+    driver: bridge
+  lnd-network:
+    name: lnd-network
+    driver: bridge
+
+volumes:
+  bitcoin: # docker volume create bitcoin
+    external: true
+  lnd:
+  lit:
